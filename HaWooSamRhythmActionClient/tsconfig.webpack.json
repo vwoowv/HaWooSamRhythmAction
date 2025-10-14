@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "target": "ESNext",
+      "esModuleInterop": true,
+      "moduleResolution": "node",
+      "skipLibCheck": true
+    },
+    "include": [
+      "./assets/scripts/main.ts"
+    ]
+  }

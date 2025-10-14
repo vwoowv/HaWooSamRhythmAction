@@ -1,7 +1,23 @@
 {
-  "name": "HaWooSamRhythmAction",
+  "name": "hawoosamrhythmaction",
   "uuid": "4f08bc19-ebb6-40c9-91aa-dfe6e1646db6",
   "creator": {
     "version": "3.8.7"
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1"
   }
 }
