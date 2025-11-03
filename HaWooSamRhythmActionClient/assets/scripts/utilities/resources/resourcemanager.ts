@@ -1,5 +1,5 @@
-import { _decorator, Component, Node } from 'cc';
-const { ccclass, property } = _decorator;
+import { Singleton } from "../base/singleton";
 
-export class resourcemanager {
+export class ResourceManager extends Singleton {
+    private constructor() { super(); }
 }
