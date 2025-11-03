@@ -7,17 +7,22 @@ export interface IAssetLists {
     spriteFrames?: string[];
 }
 
-export class ResourceManager extends Singleton {
-    private constructor() { super(); }
-    private resourceCache: Map<string, any> = new Map();
+type Ctor<T> = { new (...args: any[]): T };
 
-    public loadResource<T>(path: string, type: any): Promise<T> {
+export class ResourceManager extends Singleton {
+    public static override get I(): ResourceManager { return super.I as ResourceManager; }
+
+    private constructor() { super(); }
+
+    private resourceCache: Map<string, unknown> = new Map();
+
+    public loadResource<T>(path: string, type: Ctor<T>): Promise<T> {
         if (this.resourceCache.has(path)) {
             return Promise.resolve(this.resourceCache.get(path) as T);
         }
 
         return new Promise((resolve, reject) => {
-            resources.load(path, type, (err, asset) => {
+            resources.load(path, type as any, (err, asset) => {
                 if (err) {
                     console.error(`리소스 로드 실패: ${path}`, err);
                     reject(err);
@@ -29,20 +34,23 @@ export class ResourceManager extends Singleton {
         });
     }
 
+    public getFromCache<T>(path: string): T | undefined {
+        return this.resourceCache.get(path) as T | undefined;
+    }
+
     public async preloadGameAssets(assetLists: IAssetLists, onProgress?: (progress: number) => void) {
-        const assetGroups = [];
-        if (assetLists.prefabs?.length > 0) {
+        const assetGroups: Array<{ paths: string[]; type: Ctor<any> }> = [];
+        if (assetLists.prefabs?.length) {
             assetGroups.push({ paths: assetLists.prefabs, type: Prefab });
         }
-        if (assetLists.audioClips?.length > 0) {
+        if (assetLists.audioClips?.length) {
             assetGroups.push({ paths: assetLists.audioClips, type: AudioClip });
         }
-        if (assetLists.spriteFrames?.length > 0) {
+        if (assetLists.spriteFrames?.length) {
             assetGroups.push({ paths: assetLists.spriteFrames, type: SpriteFrame });
         }
 
-        let totalAssets = 0;
-        assetGroups.forEach(group => totalAssets += group.paths.length);
+        const totalAssets = assetGroups.reduce((sum, g) => sum + g.paths.length, 0);
         if (totalAssets === 0) {
             onProgress?.(1);
             return;
@@ -60,10 +68,35 @@ export class ResourceManager extends Singleton {
         }
     }
 
-    public async spawnPrefab<T extends Component>(path: string, parent: Node): Promise<T> {
+    public async spawnPrefab(path: string, parent: Node): Promise<Node>;
+    public async spawnPrefab<T extends Component>(path: string, compCtor: Ctor<T>, parent: Node): Promise<T>;
+    public async spawnPrefab<T extends Component>(path: string, arg2: Node | Ctor<T>, arg3?: Node): Promise<Node | T> {
+        const parent = (arg3 ? arg3 : arg2) as Node;
         const prefab = await this.loadResource<Prefab>(path, Prefab);
         const newNode: Node = instantiate(prefab);
         parent.addChild(newNode);
-        return newNode.getComponent(Component) as T;
+        if (arg3) {
+            const compCtor = arg2 as Ctor<T>;
+            return newNode.getComponent(compCtor) as T;
+        }
+        return newNode;
+    }
+
+    public release(path: string): boolean {
+        if (!this.resourceCache.has(path)) return false;
+        const asset = this.resourceCache.get(path) as any;
+        try {
+            resources.release(asset);
+        } finally {
+            this.resourceCache.delete(path);
+        }
+        return true;
+    }
+
+    public clear(): void {
+        for (const asset of this.resourceCache.values()) {
+            resources.release(asset as any);
+        }
+        this.resourceCache.clear();
     }
 }
