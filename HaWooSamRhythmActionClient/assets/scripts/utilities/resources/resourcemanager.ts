@@ -7,7 +7,7 @@ export interface IAssetLists {
     spriteFrames?: string[];
 }
 
-type Ctor<T> = { new (...args: any[]): T };
+type Ctor<T> = { new(...args: any[]): T };
 
 export class ResourceManager extends Singleton {
     public static override get I(): ResourceManager { return super.I as ResourceManager; }
